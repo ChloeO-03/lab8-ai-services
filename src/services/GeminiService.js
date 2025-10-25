@@ -93,70 +93,7 @@ class GeminiService extends AIService {
         });
         return contents;
     }
-    /**
-   * Make HTTP request to Gemini API with retry logic
-   * 
-   * This method handles the actual API call, including error handling,
-   * retry logic for network failures, and response validation.
-   * 
-   * @private
-   * @param {Array} contents - Formatted message contents
-   * @param {number} retryCount - Current retry attempt (for recursion)
-   * @returns {Promise<Object>} Parsed JSON response from API
-   * @throws {Error} If request fails after all retries
-   */
-
-    async _makeRequest(contents, retryCount = 0) {
-        try {
-            // Make POST request to Gemini API
-            const respone = await fetch(`${this.endpoint}?key=${this.apiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'appication/json',
-                },
-                body: JSON.stringify({
-                    contents: contents,
-                    generationConfig: {
-                        temperature: 0.7, // Creativity level
-                        topK: 40, // Limits vocabulary choices for consistency
-                        topP: 0.95, // Nucleaus sampling threshold
-                        maxOutputTokens: 1024, // Maximum response length
-
-                    }
-                })
-            });
-            // Check if request was successful
-        if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                // Handle specific HTTP error codes
-            if (respone.status === 429){
-                // Rate limit exceeded
-                throw new Error('Rate limit exceeded. Please wait a moment.');
-            } else if (respone.status === 403) {
-                throw new Error ('Invalid API key or quota exceeded.');
-            } else if (respone.status === 400) {
-                // Bad request (malformed output)
-                throw new Error('Invalid request. Pelase check your input.');
-            }
-            // Generic error with details if available
-            throw new Error(`API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
-            }
-            // Parse and return successful response
-            return await response.json();
-        } catch(error) {
-            // Only retry logic if we haven't exceeded max retries and error is network related
-            if (retryCount < this.maxRetries && error.message.includes('fetch')) {
-                console.log(`Retrying... (${retryCount +1}/${this.maxRetries})`);
-
-                await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount +1)));
-
-                // Recursive retry
-                return this._makeRequest(contents, retryCount + 1);
-            }
-            // If we've exhausted retries or it's not a network error, throw it 
-            throw error;
-        }  
-    }
+    
     /**
    * Extract text response from Gemini API response object
    * 
