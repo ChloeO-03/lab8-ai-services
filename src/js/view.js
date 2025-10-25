@@ -399,7 +399,41 @@ class ChatView {
       }, 3000);
     }
   }
-  
+  /**
+   * Show typing indicator (animated dots)
+   * Displayed while waiting for AI response
+   */
+  showTypingIndiator() {
+    if(!this.typingIndicator) {
+      //Create typing indicator element if it doesn't exist
+      this.typingIndicator = document.getElementById('div');
+      this.typingIndicator.id = 'typing-indicator';
+      this.typingIndicator.className = 'typing-indicator';
+
+      // Create three animated dots
+      this.typingIndicator.innerHTML = `
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      `;
+
+      this.chatContainer.appendChild(this.typingIndicator);
+    } else {
+      this.typingIndicator.style.display = 'flex';
+    }
+    this._scrollToBottom();
+  }
+  /**
+   * Hide typing indicator
+   * Called when AI response is received
+   */
+
+  hideTypingIndicator() {
+    if(this.typingIndicator) {
+      this.typingIndicator.style.display = 'none';
+    }
+  }
+
 }
 
 // Export for use in other modules
