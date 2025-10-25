@@ -57,6 +57,34 @@ class ChatController {
 
     console.log('ChatController initialized with service layer');
   }
+  /**
+   * Load saved API key from localStorage
+   * 
+   * If user has previously entered an API key, we reload it
+   * so they don't have to enter it again each session.
+   * 
+   * Security Note: Storing API keys in localStorage is NOT production-safe.
+   * For production, use server-side storage or secure environment variables.
+   * 
+   * @private
+   */
+
+  _loadSavedApiKey () {
+    try {
+      // Try to retrieve saved key
+      const savedKey = localStorage.getItem('gemini_api_key');
+
+      if(savedKey) {
+        // Store in controller instance
+        this.geminiAPiKey = savedKey;
+
+        this.view.setApiKeyStatus(true);
+      }
+    } catch (error) {
+      console.warn('Could not load saved API key:', error);
+    }
+  }
+
 
   /**
    * Load and display initial messages
@@ -72,27 +100,118 @@ class ChatController {
       this.view.showError('Failed to load messages');
     }
   }
+  /**
+   * Handle AI provider change (user selects Eliza or Gemini)
+   * 
+   * This is where the Strategy Pattern shines - we can swap
+   * AI implementations without changing any other code.
+   * 
+   * @param {string} provider - Provider name ('eliza' or 'gemini')
+   */
+
+  handleProviderChange(provider) {
+    console.log('Switching to provider:', provider);
+
+    if(provider === 'eliza') {
+      // Switch to local Eliza service
+      this.currentService = new ElizaService();
+
+    //Update the UI
+    this.view.showProviderStatus ('Using Eliza (local)', 'success');
+    this.view.hideApiKeyInput();
+
+    } else if (provder === 'gemini') {
+      // Check if we have the API key saved
+      if (this.geminiAPiKey) {
+        this.currentService = new GeminiService(this.geminiAPiKey);
+        this.view.showProviderStatus('USing Gemini Pro', 'success');
+        this.view.hideApiKeyInput();
+      } else {
+        // If there is no key, prompt user to enter one
+        this.view.showApiKeyInput();
+        this.view.showProviderStatus('Gemini API key requireed', 'warning');
+
+        // Keep using Eliza unitl key is provided
+        this.currentService = new ElizaService();
+      }
+    }
+    
+  }
+
+  /**
+   * Handle API key submission
+   * 
+   * When user enters their Gemini API key, validate it,
+   * save it, and activate the Gemini service.
+   * 
+   * @param {string} apiKey - User's Gemini API key
+   */
+
+  handleApiKeySubmit(apiKey) {
+    // Validate key format before saving
+    if(!GeminiService.isValidApiKey(apiKey)) {
+      this.view.showError('Invalid API key format. Should start with "AIzaSy" ');
+      return;
+    }
+    this.geminiAPiKey = apiKey;
+
+    //Save to localStorage for future sessions
+    try {
+      localStorage.setItem('gemini_api_key',apiKey);
+    } catch (error) {
+      console.warn('could not save API key:', error);
+    }
+    // Activate Gemini service with the new key
+    this.currentService = new GeminiService(this.geminiAPiKey);
+
+    // Update UI
+    this.view.hideApiKeyInput();
+    this.view.setApiKeyStatus(true);
+    this.view.showProviderStatus('Gemini Pro activated!', 'success');
+    this.view.showSuccess('API key saved successfully');
+  }
+
 
   /**
    * Handle sending a new message
    * @param {string} text - User's message text
    */
-  handleSendMessage(text) {
+  async handleSendMessage(text) {
     try {
       // Add user message
       this.model.create(text, true);
 
-      // Get bot response using Eliza
-      const botResponse = getBotResponse(text);
+      // Disable input whle waiting for AI response
+      this.view.setInputDisabled(true);
+      this.view.showTypingIndicator();
 
-      // Add bot response after a short delay (more natural)
-      setTimeout(() => {
-        this.model.create(botResponse, false);
-      }, 500);
+      const history = this.model.getAll();
+
+      // Get AI response using current service
+      const botResponse = await this.currentService.getResponse(text,history);
+
+      this.view.hideTypingIndicator();
+
+      this.model.create(botResponse,false);
+
+      this.view.setInputDisabled(false);
 
     } catch (error) {
-      console.error('Error sending message:', error);
-      this.view.showError('Failed to send message');
+      console.error('Error getting AI response:', error);
+
+      this.view.hideTypingIndicator();
+      this.view.setInputDisabled(false);
+
+      const errorMsg = `Sorry, I encountered an error: ${error.message}. ${
+        error.message.includes('API key') ? 'Please check your API key.' :
+        error.message.includes('quota') ? 'Try again later or use Eliza mode.' :
+        'Pease try again'
+      }`;
+      // Add error emssage to chat so user sees it
+      this.model.create(errorMsg,fasle);
+
+      //Also show alert
+      this.view.showError(error.message);
     }
   }
 
@@ -162,9 +281,11 @@ class ChatController {
       const a = document.createElement('a');
       a.href = url;
       a.download = `eliza-chat-${Date.now()}.json`;
+
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+
       URL.revokeObjectURL(url);
       
       this.view.showSuccess('Chat exported');
@@ -184,9 +305,10 @@ class ChatController {
         'Importing will replace all current messages. Continue?'
       );
       
-      if (!confirmed) return;
+      if (!confirmed) return; 
 
       this.model.importFromJSON(jsonString);
+
       this.view.showSuccess('Chat imported successfully');
     } catch (error) {
       console.error('Error importing chat:', error);
@@ -200,6 +322,17 @@ class ChatController {
    */
   getStats() {
     return this.model.getStats();
+  }
+  /**
+   * Get current AI service name
+   * 
+   * Useful for debugging - check which AI is currently active
+   * 
+   * @returns {string} Service name
+   */
+
+  getCurrentServiceName() {
+    return this.currentService.getName();
   }
 }
 
