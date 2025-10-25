@@ -15,6 +15,15 @@ class ChatView {
     this.clearBtn = document.getElementById('clear-btn');
     this.importFile = document.getElementById('import-file');
 
+    //Cache AI provider elements
+    this.providerSelect = document.getElementById('ai-provider');
+    this.apiKeyContainer = document.getElementById('api-key-container');
+    this.apiKeyInput = document.getElementById('api-key-input');
+    this.apiKeySubmitBtn = document.getElementById('api-key-submit');
+    this.providerStatus = document.getElementById('provider-status');
+
+    this.typingIndicator = null;
+
     // Event handlers (will be bound by Controller)
     this.onMessageSubmit = null;
     this.onMessageEdit = null;
@@ -22,6 +31,10 @@ class ChatView {
     this.onClearAll = null;
     this.onExport = null;
     this.onImport = null;
+
+    // AI provider event handlers
+    this.onProviderChange = null;
+    this.onApiKeySubmit = null;
   }
 
   /**
@@ -35,6 +48,7 @@ class ChatView {
     if (this.messageForm && this.onMessageSubmit) {
       this.messageForm.addEventListener('submit', (e) => {
         e.preventDefault();
+
         const text = this.messageInput.value.trim();
         if (text) {
           this.onMessageSubmit(text);
@@ -83,6 +97,35 @@ class ChatView {
       });
     }
 
+    // AI Provider Selection
+    if(this.providerSelect && this.onProviderChange) {
+      this.providerSelect.addEventListener('change', (e) => {
+        this.onProviderChange(e.target.value);
+      });
+    }
+
+    // API Key submission
+    if(this.apiKeySubmitBtn && this.onApiKeySubmit) {
+      this.apiKeyContainer.addEventListener('click', () => {
+        const apiKey = this.apiKeyInput.value.trim();
+
+        if(apiKey) {
+          this.onApiKeySubmit(apiKey)
+
+          this.apiKeyContainer.value = '';
+        }
+      })
+
+      // Also allow enter key to submit
+      if(this.apiKeyInput) {
+        this.apiKeyInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            this.apiKeySubmitBtn.click();
+          }
+        });
+      }
+    }
+
     // Event delegation for edit/delete buttons
     if (this.chatContainer) {
       this.chatContainer.addEventListener('click', (e) => {
@@ -91,6 +134,7 @@ class ChatView {
 
         if (deleteBtn) {
           const messageId = deleteBtn.dataset.messageId;
+
           if (confirm('Delete this message?')) {
             this.onMessageDelete && this.onMessageDelete(messageId);
           }
@@ -293,6 +337,69 @@ class ChatView {
       this.messageInput.disabled = disabled;
     }
   }
+  /**
+   * Show the API key input form
+   * Displayed when user selects Gemini but hasn't entered a key
+   */
+
+  showApiKeyInput() {
+    if(this.apiKeyContainer) {
+      this.apiKeyInput.style.display = 'flex';
+
+      if(this.apiKeyInput) {
+        this.apiKeyInput.focus();
+      }
+    }
+  }
+  /**
+   * Hide the API key input form
+   * Hidden after key is saved or when switching to Eliza
+   */
+
+  hideApiKeyInput() {
+    if(this.apiKeyContainer) {
+      this.apiKeyContainer.style.display = 'none';
+    }
+  }
+  /**
+   * Update API key status indicator
+   * Shows checkmark next to "Gemini Pro" when key is saved
+   * 
+   * @param {boolean} hasKey - True if API key is saved
+   */
+
+  setApiKeyStatus(hasKey) {
+    if(this.providerSelect) {
+      const geminiOption = this.providerSelect.querySelector('option[value="gemini"]');
+      if(geminiOption) {
+        // Add checkmark if key is saved
+        geminiOption.textContent = hasKey ? 'Gemini Pro ✓' : 'Gemini Pro';
+      }
+    }
+  }
+  /**
+   * Show provider status message
+   * Displays success/warning/error messages about provider state
+   * 
+   * @param {string} message - Status message to display
+   * @param {string} type - Status type: 'success', 'warning', 'error', or 'info'
+   */
+
+  showProviderStatus(message, type='info') {
+    if(this.providerStatus) {
+      // Set message and styling based on type
+      this.providerStatus.textContent = message;
+      this.providerStatus.className = `provider-status ${type}`;
+      this.providerStatus.style.display = 'block';
+
+      setTimeout(() => {
+        if (this.providerStatus) {
+          this.providerStatus.style.display = 'none';
+        }
+      }, 3000);
+    }
+  }
+  
 }
 
 // Export for use in other modules
