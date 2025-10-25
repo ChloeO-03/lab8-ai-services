@@ -19,6 +19,8 @@ class ChatController {
     // Store Gemini API key (loaded from localStorage if available)
     this.geminiAPiKey = null
 
+    this._initialize();
+
   }
 
   /**
@@ -34,6 +36,11 @@ class ChatController {
     this.view.onExport = this.handleExport.bind(this);
     this.view.onImport = this.handleImport.bind(this);
 
+
+    // AI provider management events
+    this.view.onProviderChange = this.handleProviderChange.bind(this);
+    this.view.onApiKeySubmit = this.handleApiKeySubmit(this);
+    
     // Set up View event listeners
     this.view.bindEvents();
 
@@ -42,10 +49,13 @@ class ChatController {
       this.view.renderMessages(messages);
     });
 
-    // Initial render
+    // Try to load previously saved API key from localStorage
+    this._loadSavedApiKey();
+
+    // Load and display existing messages from storage
     this._loadInitialMessages();
 
-    console.log('ChatController initialized');
+    console.log('ChatController initialized with service layer');
   }
 
   /**
