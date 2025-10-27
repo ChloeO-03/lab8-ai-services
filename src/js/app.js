@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.chatApp = app;
   
   console.log('Application ready!');
+  console.log('Available AI Providers: Eliza (local), Gemini Pro');
   console.log('Try typing messages to chat with Eliza.');
-  console.log('You can edit/delete your messages, export/import chat history, and more!');
+  console.log('Debug: chatApp.getCurrentServiceName() to see active provider');
 });
