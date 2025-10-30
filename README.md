@@ -355,7 +355,7 @@ This project demonstrates mastery of:
 git subtree push --prefix src origin gh-pages
 ```
 
-Access at: `https://YOUR-USERNAME.github.io/lab8-ai-services/`
+Access at: `https://github.com/ChloeO-03/lab8-ai-services.git`
 
 ---
 
