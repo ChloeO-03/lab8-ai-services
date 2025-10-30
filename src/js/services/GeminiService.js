@@ -1,7 +1,7 @@
 /**
  * GeminiService - Google's Gemini AI
  */
-import AIService from '/src/js/services/AIService.js';
+import AIService from './AIService.js';
 
 class GeminiService extends AIService {
   constructor(apiKey) {

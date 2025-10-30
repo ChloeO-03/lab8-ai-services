@@ -22,7 +22,7 @@
  * 
  * @extends AIService
  */
-import AIService from '/src/js/services/AIService.js';
+import AIService from './AIService.js';
 
 class OpenAIService extends AIService {
   /**
