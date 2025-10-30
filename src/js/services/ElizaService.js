@@ -3,8 +3,8 @@
  */
 import AIService from './AIService.js';
 
-// Use absolute path from server root instead of relative
-import { getBotResponse } from '../src/js/eliza.js';
+
+import { getBotResponse } from '../eliza.js';
 
 class ElizaService extends AIService {
   constructor() {
