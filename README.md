@@ -346,7 +346,7 @@ This project demonstrates mastery of:
    - Click **Deploy site**
 
 3. **Access Your App**
-   - Live at: `https://your-site-name.netlify.app`
+   - Live at: `lab8-ai-servicesss.netlify.app`
 
 
 ### Alternative: GitHub Pages
