@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini API Test - Lab 8 Research</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #4285f4 0%, #357ae8 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+    
+    .content {
+      padding: 40px;
+    }
+    
+    .section {
+      margin-bottom: 40px;
+    }
+    
+    .section h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.4rem;
+      border-bottom: 3px solid #4285f4;
+      padding-bottom: 10px;
+    }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    
+    input[type="password"],
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      margin-bottom: 15px;
+      transition: all 0.3s;
+    }
+    
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #4285f4;
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+    }
+    
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    button {
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    
+    button:hover {
+      background: #357ae8;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button.secondary {
+      background: #5f6368;
+    }
+    
+    button.secondary:hover {
+      background: #4a4e52;
+    }
+    
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    
+    .result-box {
+      background: #f8f9fa;
+      border-left: 5px solid #4285f4;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .result-box.success {
+      background: #e6f4ea;
+      border-left-color: #34a853;
+    }
+    
+    .result-box.error {
+      background: #fce8e6;
+      border-left-color: #ea4335;
+    }
+    
+    .result-box.info {
+      background: #e8f0fe;
+      border-left-color: #4285f4;
+    }
+    
+    .result-box strong {
+      font-size: 16px;
+      display: block;
+      margin-bottom: 10px;
+    }
+    
+    .metric {
+      display: inline-block;
+      background: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin: 5px 5px 5px 0;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .metric.time {
+      color: #4285f4;
+      border: 2px solid #4285f4;
+    }
+    
+    .metric.status {
+      color: #34a853;
+      border: 2px solid #34a853;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin: 5px;
+    }
+    
+    .badge.pass {
+      background: #34a853;
+      color: white;
+    }
+    
+    .badge.fail {
+      background: #ea4335;
+      color: white;
+    }
+    
+    .info-text {
+      color: #666;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    
+    .info-text a {
+      color: #4285f4;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .info-text a:hover {
+      text-decoration: underline;
+    }
+    
+    pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #4285f4;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 Gemini API Test</h1>
+      <p>Lab 8 Research - Google Gemini Evaluation</p>
+    </div>
+    
+    <div class="content">
+      <!-- API Key Section -->
+      <div class="section">
+        <h2>🔑 Configuration</h2>
+        <label for="apiKey">Gemini API Key</label>
+        <input 
+          type="password" 
+          id="apiKey" 
+          placeholder="Enter your API key (AIzaSy...)"
+        >
+        <p class="info-text">
+          Get your free API key at: <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
+          <br>No credit card required!
+        </p>
+      </div>
+      
+      <!-- Quick Tests -->
+      <div class="section">
+        <h2>⚡ Test Suite</h2>
+        <div class="test-grid">
+          <button onclick="testBasicRequest()">1️⃣ Basic Request</button>
+          <button onclick="testConversationHistory()">2️⃣ With History</button>
+          <button onclick="testErrorHandling()">3️⃣ Error Handling</button>
+          <button onclick="testMultipleRequests()">4️⃣ Multiple Requests</button>
+          <button onclick="testLongResponse()">5️⃣ Long Response</button>
+        </div>
+        <div style="margin-top: 20px;">
+          <button class="secondary" onclick="runAllTests()">▶️ Run All Tests</button>
+          <button class="secondary" onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+      </div>
+      
+      <!-- Custom Test -->
+      <div class="section">
+        <h2>💬 Custom Test</h2>
+        <label for="customMessage">Your Test Message</label>
+        <textarea 
+          id="customMessage" 
+          placeholder="Enter any message to test..."
+        >Hello! Can you explain in 2 sentences what makes Gemini different from other AI models?</textarea>
+        <button onclick="testCustomMessage()">Send Custom Message</button>
+      </div>
+      
+      <!-- Results -->
+      <div class="section">
+        <h2>📊 Test Results</h2>
+        <div id="results">
+          <div class="result-box info">
+            <strong>Ready to Test</strong>
+            Enter your API key above and click any test button to begin.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+    let testResults = [];
+
+    function getApiKey() {
+      const key = document.getElementById('apiKey').value.trim();
+      if (!key) {
+        showResult('⚠️ Please enter an API key', 'error');
+        return null;
+      }
+      if (!key.startsWith('AIzaSy')) {
+        showResult('⚠️ Invalid API key format. Gemini keys start with "AIzaSy"', 'error');
+        return null;
+      }
+      return key;
+    }
+
+    function showResult(message, type = 'info', metrics = {}) {
+      const results = document.getElementById('results');
+      const resultDiv = document.createElement('div');
+      resultDiv.className = `result-box ${type}`;
+      
+      let html = `<div>${message}</div>`;
+      
+      if (Object.keys(metrics).length > 0) {
+        html += '<div style="margin-top: 12px;">';
+        if (metrics.time) html += `<span class="metric time">⏱️ ${metrics.time}ms</span>`;
+        if (metrics.status) html += `<span class="metric status">✓ ${metrics.status}</span>`;
+        html += '</div>';
+      }
+      
+      resultDiv.innerHTML = html;
+      results.insertBefore(resultDiv, results.firstChild);
+      
+      testResults.push({ message, type, metrics, timestamp: Date.now() });
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = `
+        <div class="result-box info">
+          <strong>Results Cleared</strong>
+          Ready for new tests.
+        </div>
+      `;
+      testResults = [];
+    }
+
+    async function makeRequest(apiKey, contents) {
+      const startTime = Date.now();
+      
+      try {
+        const response = await fetch(`${ENDPOINT}?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: contents,
+            generationConfig: {
+              temperature: 0.7,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 1024,
+            }
+          })
+        });
+        
+        const duration = Date.now() - startTime;
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error?.message || `HTTP ${response.status}`);
+        }
+        
+        return {
+          success: true,
+          text: data.candidates[0].content.parts[0].text,
+          duration: duration
+        };
+        
+      } catch (error) {
+        return {
+          success: false,
+          error: error.message,
+          duration: Date.now() - startTime
+        };
+      }
+    }
+
+    async function testBasicRequest() {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+      
+      showResult('🧪 Test 1: Running basic request... <span class="loading"></span>', 'info');
+      
+      const result = await makeRequest(apiKey, [{
+        role: 'user',
+        parts: [{ text: 'Say "Hello from Gemini!" in exactly those words.' }]
+      }]);
+      
+      if (result.success) {
+        showResult(
+          `<strong>✅ Test 1: PASSED</strong><br>Response received: "${result.text}"`,
+          'success',
+          { time: result.duration, status: 'Success' }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Test 1: FAILED</strong><br>Error: ${result.error}`,
+          'error',
+          { time: result.duration }
+        );
+      }
+    }
+
+    async function testConversationHistory() {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+      
+      showResult('🧪 Test 2: Testing conversation history... <span class="loading"></span>', 'info');
+      
+      const contents = [
+        { role: 'user', parts: [{ text: 'My favorite color is blue.' }] },
+        { role: 'model', parts: [{ text: 'Blue is a great color!' }] },
+        { role: 'user', parts: [{ text: 'What is my favorite color?' }] }
+      ];
+      
+      const result = await makeRequest(apiKey, contents);
+      
+      if (result.success && result.text.toLowerCase().includes('blue')) {
+        showResult(
+          `<strong>✅ Test 2: PASSED</strong><br>AI correctly remembered context: "${result.text}"`,
+          'success',
+          { time: result.duration, status: 'Context Maintained' }
+        );
+      } else if (result.success) {
+        showResult(
+          `<strong>⚠️ Test 2: PARTIAL</strong><br>Response: "${result.text}"<br>(Expected to mention "blue")`,
+          'error',
+          { time: result.duration }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Test 2: FAILED</strong><br>Error: ${result.error}`,
+          'error',
+          { time: result.duration }
+        );
+      }
+    }
+
+    async function testErrorHandling() {
+      showResult('🧪 Test 3: Testing error handling... <span class="loading"></span>', 'info');
+      
+      const result = await makeRequest('invalid-key', [{
+        role: 'user',
+        parts: [{ text: 'Test' }]
+      }]);
+      
+      if (!result.success) {
+        showResult(
+          `<strong>✅ Test 3: PASSED</strong><br>Error correctly handled: "${result.error}"`,
+          'success',
+          { time: result.duration, status: 'Error Caught' }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Test 3: FAILED</strong><br>Expected error but got success`,
+          'error'
+        );
+      }
+    }
+
+    async function testMultipleRequests() {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+      
+      showResult('🧪 Test 4: Testing 3 sequential requests... <span class="loading"></span>', 'info');
+      
+      const messages = ['Count to 3', 'What comes after 3?', 'Add 1 to that'];
+      let allPassed = true;
+      const times = [];
+      
+      for (const msg of messages) {
+        const result = await makeRequest(apiKey, [{
+          role: 'user',
+          parts: [{ text: msg }]
+        }]);
+        
+        times.push(result.duration);
+        if (!result.success) {
+          allPassed = false;
+          break;
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+      
+      if (allPassed) {
+        const avgTime = Math.round(times.reduce((a, b) => a + b) / times.length);
+        showResult(
+          `<strong>✅ Test 4: PASSED</strong><br>All 3 requests successful<br>Average time: ${avgTime}ms`,
+          'success',
+          { status: '3/3 passed' }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Test 4: FAILED</strong><br>One or more requests failed`,
+          'error'
+        );
+      }
+    }
+
+    async function testLongResponse() {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+      
+      showResult('🧪 Test 5: Testing long response... <span class="loading"></span>', 'info');
+      
+      const result = await makeRequest(apiKey, [{
+        role: 'user',
+        parts: [{ text: 'Write a 3-sentence story about a robot learning to paint.' }]
+      }]);
+      
+      if (result.success) {
+        const wordCount = result.text.split(/\s+/).length;
+        const preview = result.text.substring(0, 150) + '...';
+        showResult(
+          `<strong>✅ Test 5: PASSED</strong><br>Generated ${wordCount} words<br><br>"${preview}"`,
+          'success',
+          { time: result.duration }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Test 5: FAILED</strong><br>Error: ${result.error}`,
+          'error'
+        );
+      }
+    }
+
+    async function testCustomMessage() {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+      
+      const message = document.getElementById('customMessage').value.trim();
+      if (!message) {
+        showResult('⚠️ Please enter a message to test', 'error');
+        return;
+      }
+      
+      showResult(`🧪 Custom Test: Sending message... <span class="loading"></span>`, 'info');
+      
+      const result = await makeRequest(apiKey, [{
+        role: 'user',
+        parts: [{ text: message }]
+      }]);
+      
+      if (result.success) {
+        showResult(
+          `<strong>✅ Custom Test: SUCCESS</strong><br>` +
+          `<strong>Your message:</strong> "${message}"<br><br>` +
+          `<strong>AI Response:</strong><br>"${result.text}"`,
+          'success',
+          { time: result.duration }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Custom Test: FAILED</strong><br>Error: ${result.error}`,
+          'error',
+          { time: result.duration }
+        );
+      }
+    }
+
+    async function runAllTests() {
+      clearResults();
+      showResult('🚀 Running complete test suite...', 'info');
+      
+      await testBasicRequest();
+      await new Promise(r => setTimeout(r, 1500));
+      
+      await testConversationHistory();
+      await new Promise(r => setTimeout(r, 1500));
+      
+      await testErrorHandling();
+      await new Promise(r => setTimeout(r, 1500));
+      
+      await testMultipleRequests();
+      await new Promise(r => setTimeout(r, 1500));
+      
+      await testLongResponse();
+      
+      const passed = testResults.filter(r => r.message.includes('PASSED')).length;
+      const failed = testResults.filter(r => r.message.includes('FAILED')).length;
+      
+      showResult(
+        `<strong>📊 Test Suite Complete</strong><br>` +
+        `<span class="badge pass">${passed} Passed</span>` +
+        `<span class="badge fail">${failed} Failed</span>`,
+        passed >= failed ? 'success' : 'error'
+      );
+    }
+  </script>
+</body>
+</html>

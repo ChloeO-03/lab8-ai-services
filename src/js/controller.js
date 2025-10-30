@@ -1,26 +1,27 @@
 /**
- * ChatController - Coordinates between Model and View
- * Responsibilities: Handle user actions, update Model, refresh View
- * NO direct DOM manipulation, NO direct data storage
+ * ChatController - Coordinates between Model, View, and AI Services
+ * NEW: Uses service layer pattern for swappable AI providers
+ * Supports: Eliza (Local), Gemini Pro, and ChatGPT (OpenAI)
  */
 import ChatModel from './model.js';
 import ChatView from './view.js';
-import ElizaService from '../services/ElizaService.js';
-import GeminiService from '../services/GeminiService.js';
+import ElizaService from './services/ElizaService.js';
+import GeminiService from './services/GeminiService.js';
+import OpenAIService from './services/OpenAIService.js';
 
 class ChatController {
   constructor() {
     this.model = new ChatModel('eliza-chat-messages');
-    // Create the View (UI Layer)
     this.view = new ChatView();
-
+    
+    // Service layer - start with Eliza
     this.currentService = new ElizaService();
-
-    // Store Gemini API key (loaded from localStorage if available)
-    this.geminiAPiKey = null
-
+    
+    // Store API keys for different providers
+    this.geminiApiKey = null;
+    this.openaiApiKey = null;
+    
     this._initialize();
-
   }
 
   /**
@@ -28,63 +29,69 @@ class ChatController {
    * @private
    */
   _initialize() {
-    // Bind View event handlers to Controller methods
+    console.log('Controller: Starting initialization...');
+    
+    // CRITICAL: Bind ALL View event handlers to Controller methods FIRST
+    // This must happen BEFORE bindEvents() is called
     this.view.onMessageSubmit = this.handleSendMessage.bind(this);
     this.view.onMessageEdit = this.handleEditMessage.bind(this);
     this.view.onMessageDelete = this.handleDeleteMessage.bind(this);
     this.view.onClearAll = this.handleClearAll.bind(this);
     this.view.onExport = this.handleExport.bind(this);
     this.view.onImport = this.handleImport.bind(this);
-
-
-    // AI provider management events
     this.view.onProviderChange = this.handleProviderChange.bind(this);
-    this.view.onApiKeySubmit = this.handleApiKeySubmit(this);
-    
-    // Set up View event listeners
+    this.view.onApiKeySubmit = this.handleApiKeySubmit.bind(this);
+
+    console.log('Controller: Handlers bound to view');
+
+    // Activate event listeners in the View
     this.view.bindEvents();
+    
+    console.log('Controller: View events bound');
 
     // Subscribe to Model changes (Observer pattern)
     this.model.subscribe((messages) => {
       this.view.renderMessages(messages);
     });
+    
+    console.log('Controller: Subscribed to model changes');
 
-    // Try to load previously saved API key from localStorage
-    this._loadSavedApiKey();
+    // Load saved API keys from localStorage
+    this._loadSavedApiKeys();
 
-    // Load and display existing messages from storage
+    // Initial render
     this._loadInitialMessages();
 
     console.log('ChatController initialized with service layer');
   }
+
   /**
-   * Load saved API key from localStorage
-   * 
-   * If user has previously entered an API key, we reload it
-   * so they don't have to enter it again each session.
-   * 
-   * Security Note: Storing API keys in localStorage is NOT production-safe.
-   * For production, use server-side storage or secure environment variables.
-   * 
+   * Load saved API keys from localStorage
    * @private
    */
-
-  _loadSavedApiKey () {
+  _loadSavedApiKeys() {
     try {
-      // Try to retrieve saved key
-      const savedKey = localStorage.getItem('gemini_api_key');
-
-      if(savedKey) {
-        // Store in controller instance
-        this.geminiAPiKey = savedKey;
-
-        this.view.setApiKeyStatus(true);
+      // Load Gemini API key
+      const savedGeminiKey = localStorage.getItem('gemini_api_key');
+      if (savedGeminiKey) {
+        this.geminiApiKey = savedGeminiKey;
+        console.log('Gemini API key loaded from storage');
       }
+      
+      // Load OpenAI API key
+      const savedOpenAIKey = localStorage.getItem('openai_api_key');
+      if (savedOpenAIKey) {
+        this.openaiApiKey = savedOpenAIKey;
+        console.log('OpenAI API key loaded from storage');
+      }
+      
+      // Update UI to show which keys are available
+      this.view.setApiKeyStatus(true);
+      
     } catch (error) {
-      console.warn('Could not load saved API key:', error);
+      console.warn('Could not load saved API keys:', error);
     }
   }
-
 
   /**
    * Load and display initial messages
@@ -100,135 +107,228 @@ class ChatController {
       this.view.showError('Failed to load messages');
     }
   }
-  /**
-   * Handle AI provider change (user selects Eliza or Gemini)
-   * 
-   * This is where the Strategy Pattern shines - we can swap
-   * AI implementations without changing any other code.
-   * 
-   * @param {string} provider - Provider name ('eliza' or 'gemini')
-   */
 
+  /**
+   * Handle AI provider change (Eliza vs Gemini vs OpenAI)
+   * @param {string} provider - Provider name ('eliza', 'gemini', or 'openai')
+   */
   handleProviderChange(provider) {
     console.log('Switching to provider:', provider);
 
-    if(provider === 'eliza') {
+    if (provider === 'eliza') {
       // Switch to local Eliza service
       this.currentService = new ElizaService();
-
-    //Update the UI
-    this.view.showProviderStatus ('Using Eliza (local)', 'success');
-    this.view.hideApiKeyInput();
-
-    } else if (provder === 'gemini') {
-      // Check if we have the API key saved
-      if (this.geminiAPiKey) {
-        this.currentService = new GeminiService(this.geminiAPiKey);
-        this.view.showProviderStatus('USing Gemini Pro', 'success');
+      this.view.showProviderStatus('Using Eliza (Local)', 'success');
+      this.view.hideApiKeyInput();
+      
+    } else if (provider === 'gemini') {
+      // Check if we have Gemini API key saved
+      if (this.geminiApiKey) {
+        this.currentService = new GeminiService(this.geminiApiKey);
+        this.view.showProviderStatus('Using Gemini 2.5 Flash', 'success');
         this.view.hideApiKeyInput();
       } else {
-        // If there is no key, prompt user to enter one
+        // No key - prompt user to enter one
         this.view.showApiKeyInput();
-        this.view.showProviderStatus('Gemini API key requireed', 'warning');
-
-        // Keep using Eliza unitl key is provided
+        this.view.showProviderStatus('Gemini API key required (starts with AIzaSy)', 'warning');
+        // Keep using Eliza until key is provided
+        this.currentService = new ElizaService();
+      }
+      
+    } else if (provider === 'openai') {
+      // Check if we have OpenAI API key saved
+      if (this.openaiApiKey) {
+        this.currentService = new OpenAIService(this.openaiApiKey, 'gpt-3.5-turbo');
+        this.view.showProviderStatus('Using ChatGPT (GPT-3.5 Turbo)', 'success');
+        this.view.hideApiKeyInput();
+      } else {
+        // No key - prompt user to enter one
+        this.view.showApiKeyInput();
+        this.view.showProviderStatus('OpenAI API key required (starts with sk-)', 'warning');
+        // Keep using Eliza until key is provided
         this.currentService = new ElizaService();
       }
     }
-    
   }
 
   /**
    * Handle API key submission
-   * 
-   * When user enters their Gemini API key, validate it,
-   * save it, and activate the Gemini service.
-   * 
-   * @param {string} apiKey - User's Gemini API key
+   * Validates and saves API key based on current provider
+   * @param {string} apiKey - User's API key
    */
-
   handleApiKeySubmit(apiKey) {
-    // Validate key format before saving
-    if(!GeminiService.isValidApiKey(apiKey)) {
-      this.view.showError('Invalid API key format. Should start with "AIzaSy" ');
-      return;
+    // Get current provider from dropdown
+    const currentProvider = this.view.providerSelect.value;
+    
+    console.log('Submitting API key for provider:', currentProvider);
+    
+    if (currentProvider === 'gemini') {
+      // Validate Gemini key format
+      if (!GeminiService.isValidApiKey(apiKey)) {
+        this.view.showError('Invalid Gemini API key format. Should start with "AIzaSy"');
+        return;
+      }
+      
+      // Save Gemini key
+      this.geminiApiKey = apiKey;
+      try {
+        localStorage.setItem('gemini_api_key', apiKey);
+      } catch (error) {
+        console.warn('Could not save Gemini API key:', error);
+      }
+      
+      // Activate Gemini service
+      this.currentService = new GeminiService(this.geminiApiKey);
+      this.view.showProviderStatus('Gemini 2.5 Flash activated!', 'success');
+      
+    } else if (currentProvider === 'openai') {
+      // Validate OpenAI key format
+      if (!OpenAIService.isValidApiKey(apiKey)) {
+        this.view.showError('Invalid OpenAI API key format. Should start with "sk-"');
+        return;
+      }
+      
+      // Save OpenAI key
+      this.openaiApiKey = apiKey;
+      try {
+        localStorage.setItem('openai_api_key', apiKey);
+      } catch (error) {
+        console.warn('Could not save OpenAI API key:', error);
+      }
+      
+      // Activate OpenAI service with GPT-3.5-turbo model
+      this.currentService = new OpenAIService(this.openaiApiKey, 'gpt-3.5-turbo');
+      this.view.showProviderStatus('ChatGPT (GPT-3.5 Turbo) activated!', 'success');
     }
-    this.geminiAPiKey = apiKey;
-
-    //Save to localStorage for future sessions
-    try {
-      localStorage.setItem('gemini_api_key',apiKey);
-    } catch (error) {
-      console.warn('could not save API key:', error);
-    }
-    // Activate Gemini service with the new key
-    this.currentService = new GeminiService(this.geminiAPiKey);
-
+    
     // Update UI
     this.view.hideApiKeyInput();
     this.view.setApiKeyStatus(true);
-    this.view.showProviderStatus('Gemini Pro activated!', 'success');
     this.view.showSuccess('API key saved successfully');
   }
-
 
   /**
    * Handle sending a new message
    * @param {string} text - User's message text
    */
   async handleSendMessage(text) {
+    console.log('Controller: handleSendMessage called with:', text);
+    
     try {
-      // Add user message
+      // Add user message immediately
       this.model.create(text, true);
 
-      // Disable input whle waiting for AI response
+      // Show typing indicator
       this.view.setInputDisabled(true);
       this.view.showTypingIndicator();
 
+      // Get conversation history for context
       const history = this.model.getAll();
 
       // Get AI response using current service
-      const botResponse = await this.currentService.getResponse(text,history);
+      const botResponse = await this.currentService.getResponse(text, history);
 
+      // Hide typing indicator
       this.view.hideTypingIndicator();
 
-      this.model.create(botResponse,false);
+      // Add bot response
+      this.model.create(botResponse, false);
 
       this.view.setInputDisabled(false);
 
     } catch (error) {
       console.error('Error getting AI response:', error);
-
       this.view.hideTypingIndicator();
       this.view.setInputDisabled(false);
-
+      
+      // Add error message to chat
       const errorMsg = `Sorry, I encountered an error: ${error.message}. ${
-        error.message.includes('API key') ? 'Please check your API key.' :
+        error.message.includes('API key') ? 'Please check your API key.' : 
         error.message.includes('quota') ? 'Try again later or use Eliza mode.' :
-        'Pease try again'
+        error.message.includes('Rate limit') ? 'Rate limit exceeded. Please wait a moment.' :
+        'Please try again.'
       }`;
-      // Add error emssage to chat so user sees it
-      this.model.create(errorMsg,fasle);
-
-      //Also show alert
+      
+      this.model.create(errorMsg, false);
       this.view.showError(error.message);
     }
   }
 
   /**
-   * Handle editing a message
+   * Handle editing a message and automatically regenerate AI response
    * @param {string} messageId - ID of message to edit
    * @param {string} newText - New message text
    */
-  handleEditMessage(messageId, newText) {
+  async handleEditMessage(messageId, newText) {
     try {
+      // Update the message
       const updated = this.model.update(messageId, newText);
       
-      if (updated) {
-        this.view.showSuccess('Message updated');
-      } else {
+      if (!updated) {
         this.view.showError('Message not found');
+        return;
       }
+      
+      console.log('Message updated, regenerating AI response...');
+      this.view.showSuccess('Message updated - regenerating AI response...');
+
+      // Get all messages
+      const allMessages = this.model.getAll();
+      
+      // Find the index of the edited message
+      const editedIndex = allMessages.findIndex(m => m.id === messageId);
+
+      if (editedIndex === -1) {
+        console.error('Could not find edited message in history');
+        return;
+      }
+
+      // Delete all messages AFTER the edited one (they're now outdated)
+      const messagesToDelete = allMessages.slice(editedIndex + 1);
+      messagesToDelete.forEach(msg => {
+        console.log('Deleting outdated message:', msg.id);
+        this.model.delete(msg.id);
+      });
+
+      // Show typing indicator
+      this.view.setInputDisabled(true);
+      this.view.showTypingIndicator();
+
+      try {
+        // Get updated history (after deletions)
+        const history = this.model.getAll();
+
+        // Get new AI response for edited message
+        const botResponse = await this.currentService.getResponse(newText, history);
+
+        // Hide typing indicator
+        this.view.hideTypingIndicator();
+        
+        // Add new bot response
+        this.model.create(botResponse, false);
+        
+        // Re-enable input
+        this.view.setInputDisabled(false);
+
+        console.log('AI response regenerated successfully');
+        
+      } catch (error) {
+        // Handle errors during AI response generation
+        console.error('Error regenerating AI response:', error);
+        this.view.hideTypingIndicator();
+        this.view.setInputDisabled(false);
+
+        // Add error message to chat
+        const errorMsg = `Sorry, I couldn't regenerate a response: ${error.message}. ${
+          error.message.includes('API key') ? 'Please check your API key.' : 
+          error.message.includes('quota') ? 'Try again later or use Eliza mode.' :
+          'Please try again.'
+        }`;
+
+        this.model.create(errorMsg, false);
+        this.view.showError('Failed to regenerate response: ' + error.message);
+      }
+      
     } catch (error) {
       console.error('Error editing message:', error);
       this.view.showError(error.message);
@@ -280,12 +380,10 @@ class ChatController {
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `eliza-chat-${Date.now()}.json`;
-
+      a.download = `chat-export-${Date.now()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-
       URL.revokeObjectURL(url);
       
       this.view.showSuccess('Chat exported');
@@ -305,10 +403,9 @@ class ChatController {
         'Importing will replace all current messages. Continue?'
       );
       
-      if (!confirmed) return; 
+      if (!confirmed) return;
 
       this.model.importFromJSON(jsonString);
-
       this.view.showSuccess('Chat imported successfully');
     } catch (error) {
       console.error('Error importing chat:', error);
@@ -317,24 +414,20 @@ class ChatController {
   }
 
   /**
-   * Get current statistics (for potential stats display)
+   * Get current statistics
    * @returns {Object} Statistics object
    */
   getStats() {
     return this.model.getStats();
   }
+
   /**
-   * Get current AI service name
-   * 
-   * Useful for debugging - check which AI is currently active
-   * 
+   * Get current service name (for debugging)
    * @returns {string} Service name
    */
-
   getCurrentServiceName() {
     return this.currentService.getName();
   }
 }
 
-// Export for use in app.js
 export default ChatController;

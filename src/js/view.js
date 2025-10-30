@@ -4,6 +4,7 @@
  */
 class ChatView {
   constructor() {
+    console.log('View: Constructor called');
     // Cache DOM elements
     this.chatContainer = document.getElementById('chat-messages');
     this.messageForm = document.getElementById('message-form');
@@ -344,7 +345,7 @@ class ChatView {
 
   showApiKeyInput() {
     if(this.apiKeyContainer) {
-      this.apiKeyInput.style.display = 'flex';
+      this.apiKeyContainer.style.display = 'flex';
 
       if(this.apiKeyInput) {
         this.apiKeyInput.focus();
@@ -403,10 +404,10 @@ class ChatView {
    * Show typing indicator (animated dots)
    * Displayed while waiting for AI response
    */
-  showTypingIndiator() {
+  showTypingIndicator() {
     if(!this.typingIndicator) {
       //Create typing indicator element if it doesn't exist
-      this.typingIndicator = document.getElementById('div');
+      this.typingIndicator = document.createElement('div');
       this.typingIndicator.id = 'typing-indicator';
       this.typingIndicator.className = 'typing-indicator';
 

@@ -1,0 +1,29 @@
+{
+  "name": "lab8-ai-services",
+  "version": "1.0.0",
+  "description": "Lab 8: AI Services Chat Application with MVC Architecture",
+  "type": "module",
+  
+  "scripts": {
+    "start": "npx http-server src -p 8000",
+    "test": "playwright test --config=tests/playwright.config.js",
+    "test:ui": "playwright test --config=tests/playwright.config.js --ui",
+    "test:headed": "playwright test --config=tests/playwright.config.js --headed",
+    "test:debug": "playwright test --config=tests/playwright.config.js --debug",
+    "test:report": "playwright show-report"
+  },
+  "keywords": [
+    "chat",
+    "ai",
+    "mvc",
+    "eliza",
+    "gemini",
+    "openai"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "http-server": "^14.1.1"
+  }
+}

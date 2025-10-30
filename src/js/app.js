@@ -1,21 +1,25 @@
 /**
  * app.js - Application entry point
- * Initializes the MVC architecture
  */
 import ChatController from './controller.js';
 
-// Wait for DOM to be ready
+// CRITICAL: Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('Initializing Eliza Chat Application...');
+  console.log('=== DOM LOADED ===');
+  console.log('Initializing AI Chat Application...');
   
-  // Create the controller (which creates Model and View)
+  // Verify HTML elements exist
+  const form = document.getElementById('message-form');
+  const input = document.getElementById('message-input');
+  console.log('Form exists in DOM:', !!form);
+  console.log('Input exists in DOM:', !!input);
+  
+  // Create the controller
   const app = new ChatController();
   
-  // Make it available globally for debugging (optional)
+  // Make available globally for debugging
   window.chatApp = app;
   
-  console.log('Application ready!');
-  console.log('Available AI Providers: Eliza (local), Gemini Pro');
-  console.log('Try typing messages to chat with Eliza.');
-  console.log('Debug: chatApp.getCurrentServiceName() to see active provider');
+  console.log('=== APPLICATION READY ===');
+  console.log('Try typing a message!');
 });

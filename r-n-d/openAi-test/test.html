@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenAI API Test - Lab 8 Research</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #10a37f 0%, #0d8f6f 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #10a37f 0%, #0d8f6f 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+    
+    .content {
+      padding: 40px;
+    }
+    
+    .section {
+      margin-bottom: 40px;
+    }
+    
+    .section h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.4rem;
+      border-bottom: 3px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    
+    input[type="password"],
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      margin-bottom: 15px;
+      transition: all 0.3s;
+    }
+    
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #10a37f;
+      box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.1);
+    }
+    
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    button {
+      background: #10a37f;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    
+    button:hover {
+      background: #0d8f6f;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 163, 127, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button.secondary {
+      background: #5f6368;
+    }
+    
+    button.secondary:hover {
+      background: #4a4e52;
+    }
+    
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    
+    .result-box {
+      background: #f8f9fa;
+      border-left: 5px solid #10a37f;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .result-box.success {
+      background: #e6f4ea;
+      border-left-color: #34a853;
+    }
+    
+    .result-box.error {
+      background: #fce8e6;
+      border-left-color: #ea4335;
+    }
+    
+    .result-box.info {
+      background: #e8f0fe;
+      border-left-color: #10a37f;
+    }
+    
+    .result-box strong {
+      font-size: 16px;
+      display: block;
+      margin-bottom: 10px;
+    }
+    
+    .metric {
+      display: inline-block;
+      background: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin: 5px 5px 5px 0;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .metric.time {
+      color: #10a37f;
+      border: 2px solid #10a37f;
+    }
+    
+    .metric.status {
+      color: #34a853;
+      border: 2px solid #34a853;
+    }
+    
+    .metric.model {
+      color: #4285f4;
+      border: 2px solid #4285f4;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin: 5px;
+    }
+    
+    .badge.pass {
+      background: #34a853;
+      color: white;
+    }
+    
+    .badge.fail {
+      background: #ea4335;
+      color: white;
+    }
+    
+    .info-text {
+      color: #666;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    
+    .info-text a {
+      color: #10a37f;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .info-text a:hover {
+      text-decoration: underline;
+    }
+    
+    .warning-box {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 15px 0;
+      color: #856404;
+    }
+    
+    .warning-box strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #10a37f;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 OpenAI API Test</h1>
+      <p>Lab 8 Research - ChatGPT Evaluation</p>
+    </div>
+    
+    <div class="content">
+      <!-- Warning -->
+      <div class="warning-box">
+        <strong>⚠️ Credit Card Required</strong>
+        OpenAI requires a credit card to use the API, even for the free $5 credit. 
+        This is why Gemini was selected as the primary service for Lab 8.
+      </div>
+      
+      <!-- API Key Section -->
+      <div class="section">
+        <h2>🔑 Configuration</h2>
+        <label for="apiKey">OpenAI API Key</label>
+        <input 
+          type="password" 
+          id="apiKey" 
+          placeholder="Enter your API key (sk-...)"
+        >
+        
+        <label for="modelSelect">Model Selection</label>
+        <select id="modelSelect">
+          <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Fast, Cheap)</option>
+          <option value="gpt-4">GPT-4 (Best Quality, Slower)</option>
+          <option value="gpt-4-turbo">GPT-4 Turbo (Fast GPT-4)</option>
+        </select>
+        
+        <p class="info-text">
+          Get your API key at: <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>
+          <br><strong>Note:</strong> Requires credit card verification (receives $5 free credit)
+        </p>
+      </div>
+      
+      <!-- Quick Tests -->
+      <div class="section">
+        <h2>⚡ Test Suite</h2>
+        <div class="test-grid">
+          <button onclick="testBasicRequest()">1️⃣ Basic Request</button>
+          <button onclick="testConversationHistory()">2️⃣ With History</button>
+          <button onclick="testErrorHandling()">3️⃣ Error Handling</button>
+          <button onclick="testMultipleModels()">4️⃣ Model Comparison</button>
+          <button onclick="testLongResponse()">5️⃣ Long Response</button>
+        </div>
+        <div style="margin-top: 20px;">
+          <button class="secondary" onclick="runAllTests()">▶️ Run All Tests</button>
+          <button class="secondary" onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+      </div>
+      
+      <!-- Custom Test -->
+      <div class="section">
+        <h2>💬 Custom Test</h2>
+        <label for="customMessage">Your Test Message</label>
+        <textarea 
+          id="customMessage" 
+          placeholder="Enter any message to test..."
+        >Explain in 2 sentences what makes GPT-3.5 different from GPT-4.</textarea>
+        <button onclick="testCustomMessage()">Send Custom Message</button>
+      </div>
+      
+      <!-- Results -->
+      <div class="section">
+        <h2>📊 Test Results</h2>
+        <div id="results">
+          <div class="result-box info">
+            <strong>Ready to Test</strong>
+            Enter your OpenAI API key above and click any test button to begin.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+    let testResults = [];
+
+    function getApiKey() {
+      const key = document.getElementById('apiKey').value.trim();
+      if (!key) {
+        showResult('⚠️ Please enter an API key', 'error');
+        return null;
+      }
+      if (!key.startsWith('sk-')) {
+        showResult('⚠️ Invalid API key format. OpenAI keys start with "sk-"', 'error');
+        return null;
+      }
+      return key;
+    }
+
+    function getModel() {
+      return document.getElementById('modelSelect').value;
+    }
+
+    function showResult(message, type = 'info', metrics = {}) {
+      const results = document.getElementById('results');
+      const resultDiv = document.createElement('div');
+      resultDiv.className = `result-box ${type}`;
+      
+      let html = `<div>${message}</div>`;
+      
+      if (Object.keys(metrics).length > 0) {
+        html += '<div style="margin-top: 12px;">';
+        if (metrics.time) html += `<span class="metric time">⏱️ ${metrics.time}ms</span>`;
+        if (metrics.status) html += `<span class="metric status">✓ ${metrics.status}</span>`;
+        if (metrics.model) html += `<span class="metric model">🤖 ${metrics.model}</span>`;
+        html += '</div>';
+      }
+      
+      resultDiv.innerHTML = html;
+      results.insertBefore(resultDiv, results.firstChild);
+      
+      testResults.push({ message, type, metrics, timestamp: Date.now() });
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = `
+        <div class="result-box info">
+          <strong>Results Cleared</strong>
+          Ready for new tests.
+        </div>
+      `;
+      testResults = [];
+    }
+
+    async function makeRequest(apiKey, messages, model) {
+      const startTime = Date.now();
+      
+      try {
+        const response = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: messages,
+            max_tokens: 500,
+            temperature: 0.7
+          })
+        });
+        
+        const duration = Date.now() - startTime;
+        const data = await response.json();
+        
+        if (!response.ok) {
+          let errorMsg = data.error?.message || `HTTP ${response.status}`;
+          if (response.status === 401) {
+            errorMsg = 'Invalid API key. Check your key at platform.openai.com/api-keys';
+          } else if (response.status === 429) {
+            errorMsg = 'Rate limit exceeded. Wait a moment or upgrade your plan.';
+          }
+          throw new Error(errorMsg);
+        }
+        
+        return {
+          success: true,
+          text: data.choices[0].message.content,
+          model: data.model,
+          duration: duration
+        };
+        
+      } catch (error) {
+        return {
+          success: false,
+          error: error.message,
+          duration: Date.now() - startTime
+        };
+      }
+    }
+
+    async function testBasicRequest() {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+      
+      const model = getModel();
+      showResult(`🧪 Test 1: Running basic request with ${model}... <span class="loading"></span>`, 'info');
+      
+      const result = await makeRequest(apiKey, [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'Say "Hello from ChatGPT!" in exactly those words.' }
+      ], model);
+      
+      if (result.success) {
+        showResult(
+          `<strong>✅ Test 1: PASSED</strong><br>Response: "${result.text}"`,
+          'success',
+          { time: result.duration, status: 'Success', model: result.model }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Test 1: FAILED</strong><br>Error: ${result.error}`,
+          'error',
+          { time: result.duration }
+        );
+      }
+    }
+
+    async function testConversationHistory() {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+      
+      const model = getModel();
+      showResult('🧪 Test 2: Testing conversation history... <span class="loading"></span>', 'info');
+      
+      const messages = [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'My favorite color is purple.' },
+        { role: 'assistant', content: 'Purple is a wonderful color!' },
+        { role: 'user', content: 'What is my favorite color?' }
+      ];
+      
+      const result = await makeRequest(apiKey, messages, model);
+      
+      if (result.success && result.text.toLowerCase().includes('purple')) {
+        showResult(
+          `<strong>✅ Test 2: PASSED</strong><br>AI correctly remembered context: "${result.text}"`,
+          'success',
+          { time: result.duration, status: 'Context Maintained', model: result.model }
+        );
+      } else if (result.success) {
+        showResult(
+          `<strong>⚠️ Test 2: PARTIAL</strong><br>Response: "${result.text}"<br>(Expected to mention "purple")`,
+          'error',
+          { time: result.duration }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Test 2: FAILED</strong><br>Error: ${result.error}`,
+          'error',
+          { time: result.duration }
+        );
+      }
+    }
+
+    async function testErrorHandling() {
+      showResult('🧪 Test 3: Testing error handling... <span class="loading"></span>', 'info');
+      
+      const result = await makeRequest('sk-invalid-key-12345', [
+        { role: 'user', content: 'Test' }
+      ], 'gpt-3.5-turbo');
+      
+      if (!result.success) {
+        showResult(
+          `<strong>✅ Test 3: PASSED</strong><br>Error correctly handled: "${result.error}"`,
+          'success',
+          { time: result.duration, status: 'Error Caught' }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Test 3: FAILED</strong><br>Expected error but got success`,
+          'error'
+        );
+      }
+    }
+
+    async function testMultipleModels() {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+      
+      showResult('🧪 Test 4: Comparing GPT-3.5 vs GPT-4... <span class="loading"></span>', 'info');
+      
+      const prompt = [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'Explain AI in one sentence.' }
+      ];
+      
+      // Test GPT-3.5
+      const gpt35Result = await makeRequest(apiKey, prompt, 'gpt-3.5-turbo');
+      await new Promise(r => setTimeout(r, 1000));
+      
+      // Test GPT-4 (if available)
+      const gpt4Result = await makeRequest(apiKey, prompt, 'gpt-4');
+      
+      if (gpt35Result.success && gpt4Result.success) {
+        showResult(
+          `<strong>✅ Test 4: PASSED</strong><br>` +
+          `<strong>GPT-3.5:</strong> ${gpt35Result.time}ms - "${gpt35Result.text}"<br><br>` +
+          `<strong>GPT-4:</strong> ${gpt4Result.time}ms - "${gpt4Result.text}"`,
+          'success',
+          { status: 'Both models work' }
+        );
+      } else if (gpt35Result.success) {
+        showResult(
+          `<strong>⚠️ Test 4: PARTIAL</strong><br>` +
+          `GPT-3.5 works but GPT-4 failed: ${gpt4Result.error}`,
+          'info',
+          { time: gpt35Result.duration }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Test 4: FAILED</strong><br>GPT-3.5 error: ${gpt35Result.error}`,
+          'error'
+        );
+      }
+    }
+
+    async function testLongResponse() {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+      
+      const model = getModel();
+      showResult('🧪 Test 5: Testing long response generation... <span class="loading"></span>', 'info');
+      
+      const result = await makeRequest(apiKey, [
+        { role: 'system', content: 'You are a creative writer.' },
+        { role: 'user', content: 'Write a 3-sentence story about a programmer who discovers AI.' }
+      ], model);
+      
+      if (result.success) {
+        const wordCount = result.text.split(/\s+/).length;
+        const preview = result.text.substring(0, 150) + '...';
+        showResult(
+          `<strong>✅ Test 5: PASSED</strong><br>Generated ${wordCount} words<br><br>"${preview}"`,
+          'success',
+          { time: result.duration, model: result.model }
+        );
+      } else {
+        showResult(`<strong>❌ Test 5: FAILED</strong><br>Error: ${result.error}`,
+          'error',
+          { time: result.duration }
+        );
+      }
+    }
+
+    async function testCustomMessage() {
+      const apiKey = getApiKey();
+      if (!apiKey) return;
+      
+      const message = document.getElementById('customMessage').value.trim();
+      if (!message) {
+        showResult('⚠️ Please enter a message to test', 'error');
+        return;
+      }
+      
+      const model = getModel();
+      showResult(`🧪 Custom Test: Sending message with ${model}... <span class="loading"></span>`, 'info');
+      
+      const result = await makeRequest(apiKey, [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: message }
+      ], model);
+      
+      if (result.success) {
+        showResult(
+          `<strong>✅ Custom Test: SUCCESS</strong><br>` +
+          `<strong>Your message:</strong> "${message}"<br><br>` +
+          `<strong>AI Response:</strong><br>"${result.text}"`,
+          'success',
+          { time: result.duration, model: result.model }
+        );
+      } else {
+        showResult(
+          `<strong>❌ Custom Test: FAILED</strong><br>Error: ${result.error}`,
+          'error',
+          { time: result.duration }
+        );
+      }
+    }
+
+    async function runAllTests() {
+      clearResults();
+      showResult('🚀 Running complete test suite...', 'info');
+      
+      await testBasicRequest();
+      await new Promise(r => setTimeout(r, 2000));
+      
+      await testConversationHistory();
+      await new Promise(r => setTimeout(r, 2000));
+      
+      await testErrorHandling();
+      await new Promise(r => setTimeout(r, 2000));
+      
+      await testLongResponse();
+      
+      // Summary
+      const passed = testResults.filter(r => r.message.includes('PASSED')).length;
+      const failed = testResults.filter(r => r.message.includes('FAILED')).length;
+      
+      showResult(
+        `<strong>📊 Test Suite Complete</strong><br>` +
+        `<span class="badge pass">${passed} Passed</span>` +
+        `<span class="badge fail">${failed} Failed</span><br><br>` +
+        `<strong>Conclusion:</strong> OpenAI API works excellently but requires credit card. ` +
+        `Gemini selected as primary for educational use.`,
+        passed >= failed ? 'success' : 'error'
+      );
+    }
+  </script>
+</body>
+</html>

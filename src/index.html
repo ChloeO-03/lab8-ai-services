@@ -33,48 +33,54 @@
         <label for="ai-provider" class="provider-label">
           🤖 AI Provider:
         </label>
-        <select id="ai-provider" class="provider-select">
+        <select id="ai-provider" class="provider-select" aria-label="Select AI Provider">
           <option value="eliza">Eliza (Local)</option>
           <option value="gemini">Gemini Pro</option>
         </select>
         
         <!-- API Key Input (hidden by default) -->
         <div id="api-key-container" class="api-key-container" style="display: none;">
+          <label for="api-key-input" class="visually-hidden">API Key</label>
           <input 
             type="password" 
             id="api-key-input" 
             class="api-key-input"
             placeholder="Enter Gemini API key (starts with AIzaSy)..."
+            aria-label="Enter your Gemini API key"
           >
-          <button id="api-key-submit" class="api-key-submit">Save Key</button>
+          <button id="api-key-submit" class="api-key-submit" aria-label="Save API Key">
+            Save Key
+          </button>
         </div>
         
         <!-- Provider Status Message -->
-        <div id="provider-status" class="provider-status" style="display: none;"></div>
+        <div id="provider-status" class="provider-status" role="status" aria-live="polite" style="display: none;"></div>
       </div>
 
       <!-- Controls Panel -->
       <div class="controls-panel">
-        <button id="export-btn" class="control-button">
+        <button id="export-btn" class="control-button" aria-label="Export chat history">
           📥 Export Chat
         </button>
-        <button id="import-btn" class="control-button">
+        <button id="import-btn" class="control-button" aria-label="Import chat history">
           📤 Import Chat
         </button>
-        <button id="clear-btn" class="control-button danger">
+        <button id="clear-btn" class="control-button danger" aria-label="Clear all messages">
           🗑️ Clear All
         </button>
+        <label for="import-file" class="visually-hidden">Import file</label>
         <input 
           type="file" 
           id="import-file" 
           accept=".json"
+          aria-label="Select JSON file to import"
           style="display: none;"
         >
       </div>
 
       <!-- Chat Container -->
       <div class="chat-container">
-        <div id="chat-messages" class="chat-messages">
+        <div id="chat-messages" class="chat-messages" role="log" aria-live="polite" aria-label="Chat messages">
           <!-- Messages will be rendered here by the View -->
           <div class="empty-state">
             <p>No messages yet. Start a conversation!</p>
@@ -83,15 +89,19 @@
         
         <!-- Message Input Form -->
         <form id="message-form" class="message-form">
+          <label for="message-input" class="visually-hidden">Type your message</label>
           <input 
             type="text" 
             id="message-input" 
             class="message-input"
             placeholder="Type a message..."
             autocomplete="off"
+            aria-label="Type your message here"
             required
           >
-          <button type="submit" class="send-button">Send</button>
+          <button type="submit" class="send-button" aria-label="Send message">
+            Send
+          </button>
         </form>
       </div>
 
